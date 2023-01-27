@@ -1,14 +1,9 @@
 NAME = plugin.video.elementum
-GIT = git
-GIT_VERSION = $(shell $(GIT) describe --always)
-GIT_USER = elgatito
-GIT_REPOSITORY = plugin.video.elementum
 VERSION = $(shell sed -ne "s/.*version=\"\([0-9a-z\.\-]*\)\"\sprovider.*/\1/p" addon.xml)
 ARCHS = \
 	android_arm \
 	android_arm64 \
 	android_x86 \
-	android_x64 \
 	darwin_x64 \
 	linux_armv6 \
 	linux_armv7 \
@@ -34,7 +29,7 @@ $(ZIP_FILE):
 	git archive --format zip --prefix $(NAME)/ --output $(ZIP_FILE) HEAD
 	mkdir -p $(NAME)/resources/bin
 	for arch in $(ARCHS); do \
-		cp -r `pwd`/$(DEV)/resources/bin/$$arch $(NAME)/resources/bin/$$arch; \
+		cp -r `pwd`/resources/bin/$$arch $(NAME)/resources/bin/$$arch; \
 		echo "v$(VERSION)" >> $(NAME)/resources/bin/$$arch/version; \
 		zip -9 -r -g $(ZIP_FILE) $(NAME)/resources/bin/$$arch; \
 	done
@@ -47,37 +42,6 @@ zipfiles: addon.xml
 	for arch in $(ARCHS); do \
 		$(MAKE) $$arch; \
 	done
-
-upload:
-	echo "Uploading zip files"
-	$(eval EXISTS := $(shell github-release info --user $(GIT_USER) --repo $(GIT_REPOSITORY) --tag v$(VERSION) 1>&2 2>/dev/null; echo $$?))
-ifneq ($(EXISTS),1)
-	github-release release \
-		--user $(GIT_USER) \
-		--repo $(GIT_REPOSITORY) \
-		--tag v$(VERSION) \
-		--name "$(VERSION)" \
-		--description "$(VERSION)"
-endif
-
-	sleep 5
-	for arch in $(ARCHS); do \
-		github-release upload \
-			--user $(GIT_USER) \
-			--repo $(GIT_REPOSITORY) \
-			--replace \
-			--tag v$(VERSION) \
-			--file $(NAME)-$(VERSION).$$arch.zip \
-			--name $(NAME)-$(VERSION).$$arch.zip; \
-	done
-
-	github-release upload \
-		--user $(GIT_USER) \
-		--repo $(GIT_REPOSITORY) \
-		--replace \
-		--tag v$(VERSION) \
-		--file $(NAME)-$(VERSION).zip \
-		--name $(NAME)-$(VERSION).zip
 
 clean_arch:
 	 rm -f $(ZIP_FILE)
